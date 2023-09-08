@@ -1630,9 +1630,16 @@ func (v *Viper) MergeInConfig() error {
 // key does not exist in the file.
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 
+func ReadConfigJSON(in io.Reader) error { return v.ReadConfigJSON(in) }
+
 func (v *Viper) ReadConfig(in io.Reader) error {
 	v.config = make(map[string]interface{})
 	return v.unmarshalReader(in, v.config)
+}
+
+func (v *Viper) ReadConfigJSON(in io.Reader) error {
+	v.config = make(map[string]interface{})
+	return v.unmarshalReaderJSON(in, v.config)
 }
 
 // MergeConfig merges a new configuration with an existing config.
@@ -1742,6 +1749,10 @@ func unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	return v.unmarshalReader(in, c)
 }
 
+func unmarshalReaderJSON(in io.Reader, c map[string]interface{}) error {
+	return v.unmarshalReaderJSON(in, c)
+}
+
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
@@ -1752,6 +1763,19 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 		if err != nil {
 			return ConfigParseError{err}
 		}
+	}
+
+	insensitiviseMap(c)
+	return nil
+}
+
+func (v *Viper) unmarshalReaderJSON(in io.Reader, c map[string]interface{}) error {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(in)
+
+	err := v.decoderRegistry.Decode("json", buf.Bytes(), c)
+	if err != nil {
+		return ConfigParseError{err}
 	}
 
 	insensitiviseMap(c)
